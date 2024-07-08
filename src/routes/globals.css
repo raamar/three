@@ -1,0 +1,13 @@
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+}
+
+.scenes {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
