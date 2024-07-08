@@ -8,6 +8,7 @@
   import Model from '$lib/components/Model.svelte'
   import Particles from '$lib/components/Particles.svelte'
   import Planet from '$lib/components/Planet.svelte'
+  import Raycaster from '$lib/components/Raycaster.svelte'
   import Shaders from '$lib/components/Shaders.svelte'
   import Shadows from '$lib/components/Shadows.svelte'
   import Sphere from '$lib/components/Sphere.svelte'
@@ -31,4 +32,6 @@
 
 <!-- <Shaders /> -->
 
-<Planet />
+<!-- <Planet /> -->
+
+<Raycaster />

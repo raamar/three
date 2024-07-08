@@ -25,18 +25,33 @@
   }
 
   const appMount = (node: HTMLElement) => {
+    // Debug
     const gui = new GUI()
 
+    // Scene
     const scene = new THREE.Scene()
+
+    /**
+     * Camera
+     */
     const camera = new THREE.PerspectiveCamera(75, $windowStore.innerWidth / $windowStore.innerHeight, 0.1, 100)
+    camera.position.z = 3
+    scene.add(camera)
+
+    /**
+     * Renderer
+     */
 
     const renderer = new THREE.WebGLRenderer({ antialias: true })
 
-    const clock = new THREE.Clock()
+    // Controls
     const orbitControls = new OrbitControls(camera, node)
-
     orbitControls.enableDamping = true
 
+    /**
+     * Animate
+     */
+    const clock = new THREE.Clock()
     const animate = () => {
       const elapsedTime = clock.getElapsedTime()
 
