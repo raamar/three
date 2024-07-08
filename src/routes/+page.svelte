@@ -32,6 +32,6 @@
 
 <!-- <Shaders /> -->
 
-<!-- <Planet /> -->
+<Planet />
 
-<Raycaster />
+<!-- <Raycaster /> -->
