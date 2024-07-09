@@ -11,6 +11,8 @@
   import particleVertexShader from '$lib/shaders/particle/vertex.glsl?raw'
   import particleFragmentShader from '$lib/shaders/particle/fragment.glsl?raw'
   import { points as data } from '$lib/data/points'
+  import logoTextureUrl from '$lib/assets/textures/logo.png?url'
+  import pointTextureUrl from '$lib/assets/textures/particles/1.png?url'
 
   const cursor = new THREE.Vector2()
 
@@ -36,7 +38,7 @@
     const camera = new THREE.PerspectiveCamera(30, $windowStore.innerWidth / $windowStore.innerHeight, 0.1, 10000)
     camera.position.set(0, 0, 3)
     gsap.to(camera.position, { z: 9, duration: 3.5 }).eventCallback('onComplete', () => {
-      orbitControls.minDistance = 5
+      // orbitControls.minDistance = 5
     })
 
     const clock = new THREE.Clock()
@@ -44,7 +46,7 @@
 
     orbitControls.enablePan = false
     orbitControls.enableDamping = true
-    orbitControls.maxDistance = 9
+    // orbitControls.maxDistance = 9
 
     scene.add(camera)
 
@@ -57,6 +59,8 @@
      */
 
     const textureLoader = new THREE.TextureLoader()
+    const logoTexture = textureLoader.load(logoTextureUrl)
+    const pointTexture = textureLoader.load(pointTextureUrl)
 
     /**
      * Objects
@@ -227,8 +231,6 @@
     scene.add(atmosphereMesh)
 
     // Point
-    // const pointsGeometry = new THREE.SphereGeometry(1, 5, 5)
-    // const material = new THREE.MeshBasicMaterial({ color: 'red' })
 
     const getVec3Point = (lat: number, lon: number) => {
       const phi = ((90 - lat) * Math.PI) / 180
@@ -268,9 +270,13 @@
       vertexShader: particleVertexShader,
       fragmentShader: particleFragmentShader,
       uniforms: {
-        uColor: { value: new THREE.Color('0xffffff') },
-        uSize: { value: 1.8 },
+        uColor: { value: new THREE.Color('#ffffff') },
+        uSize: { value: 1.5 },
         uHeight: { value: 1.0 },
+        uTexture: {
+          value: pointTexture,
+        },
+        alphaTest: { value: 0.9 },
       },
     })
 
@@ -285,17 +291,91 @@
     particles.rotation.set(startRotation.x, startRotation.y, startRotation.z)
     gsap.to(particles.rotation, ratitionAnimationObject)
 
+    // Logo
+
+    const logo = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: logoTexture,
+        depthWrite: false,
+      })
+    )
+
+    const orbitLogoConfig = {
+      height: 2.2,
+      phi: Math.PI / 2,
+      theta: 0,
+      speedCoefficient: 0.2,
+    }
+
+    logo.scale.set(0.128, 0.1, 1)
+    scene.add(logo)
+
+    const logoFolder = gui.addFolder('Logo')
+
+    logoFolder
+      .add(orbitLogoConfig, 'height')
+      .min(distance)
+      .max(distance * 3)
+      .step(0.01)
+
+    // logoFolder.add(orbitLogoConfig, 'phi').min(0).max(Math.PI).step(0.01)
+    // logoFolder.add(orbitLogoConfig, 'theta').min(0).max(Math.PI).step(0.01)
+
     /**
      * Raycaster
      */
     const raycaster = new THREE.Raycaster()
 
     /**
+     * Particles
+     */
+
+    // // const particlesGeometry = new THREE.SphereGeometry(1, 32, 32)
+    // const count = 20000
+    // const starsGeometry = new THREE.BufferGeometry()
+    // const starsPositions = new Float32Array(count * 3).map(() => (Math.random() - 0.5) * 20)
+    // // const colors = new Float32Array(count * 3).map(() => Math.random())
+    // starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3))
+    // // starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+    // // Material
+
+    // const starsMaterial = new THREE.PointsMaterial({
+    //   size: 0.01,
+    //   sizeAttenuation: true,
+    //   // transparent: true,
+    //   // depthWrite: false,
+    //   // blending: THREE.AdditiveBlending,
+    //   // vertexColors: true,
+    // })
+
+    // // Points
+    // const stars = new THREE.Points(starsGeometry, starsMaterial)
+    // scene.add(stars)
+
+    /**
      * Animate
      */
 
+    logo.position.set(0, 0, 2.2)
+    const dir = new THREE.Vector3(0, 0, 0.01)
+
     const animate = () => {
       const elapsedTime = clock.getElapsedTime()
+      // logo.position.add(dir.clone().multiplyScalar(2.2))
+      // Object.assign(logo.position, logo.position.clone().add(dir).normalize().multiplyScalar(2.2))
+
+      // orbitLogoConfig.phi = (orbitLogoConfig.phi + orbitLogoConfig.speedCoefficient / 5) % 90
+      // orbitLogoConfig.theta = (orbitLogoConfig.theta + orbitLogoConfig.speedCoefficient) % 89
+      // logo.position.x =
+      //   orbitLogoConfig.height *
+      //   Math.sin(orbitLogoConfig.phi) *
+      //   Math.cos(orbitLogoConfig.theta * orbitLogoConfig.speedCoefficient)
+      // logo.position.y =
+      //   orbitLogoConfig.height *
+      //   Math.sin(orbitLogoConfig.phi) *
+      //   Math.sin(orbitLogoConfig.theta * orbitLogoConfig.speedCoefficient)
+      // logo.position.z = orbitLogoConfig.height * Math.cos(orbitLogoConfig.phi)
 
       // const alphas = particlesGeometry.attributes.alpha
       // for (let i = 0; i < alphas.count; i++) {
