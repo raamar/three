@@ -8,6 +8,8 @@
   import earthFragmentShader from '$lib/shaders/earth/fragment.glsl?raw'
   import atmosphereVertexShader from '$lib/shaders/atmosphere/vertex.glsl?raw'
   import atmosphereFragmentShader from '$lib/shaders/atmosphere/fragment.glsl?raw'
+  import particleVertexShader from '$lib/shaders/particle/vertex.glsl?raw'
+  import particleFragmentShader from '$lib/shaders/particle/fragment.glsl?raw'
   import { points as data } from '$lib/data/points'
 
   const cursor = new THREE.Vector2()
@@ -109,6 +111,7 @@
     }
 
     const earth_folder = gui.addFolder('Earth')
+    earth_folder.close()
     earth_folder.add(earthMaterial.uniforms.uIntencity, 'value').min(0).max(10).step(0.01).name('uIntencity')
     earth_folder.add(earthMaterial.uniforms.uIntencityX, 'value').min(-10).max(10).step(0.01).name('uIntencityX')
     earth_folder.add(earthMaterial.uniforms.uIntencityY, 'value').min(-10).max(10).step(0.01).name('uIntencityY')
@@ -167,6 +170,7 @@
     })
 
     const atmosphere_folder = gui.addFolder('Atmosphere')
+    atmosphere_folder.close()
     atmosphere_folder.add(atmosphereMaterial.uniforms.uIntencity, 'value').min(0).max(3).step(0.001).name('uIntencity')
     atmosphere_folder
       .add(atmosphereMaterial.uniforms.uIntencityX, 'value')
@@ -250,20 +254,30 @@
         .flat()
     )
 
+    const alphas = new Float32Array(positions.length / 3)
+
+    for (let i = 0; i < alphas.length; i++) {
+      alphas[i] = 0.8
+    }
+
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    particlesGeometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1))
 
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.03,
-      sizeAttenuation: true,
-      // map: particleTexture,
-      // transparent: true,
-      // opacity: 0.9,
-      // alphaMap: particleTexture,
-      // depthWrite: false,
-
-      // vertexColors: true,
-      // color: '#ffffff',
+    const particlesMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      vertexShader: particleVertexShader,
+      fragmentShader: particleFragmentShader,
+      uniforms: {
+        uColor: { value: new THREE.Color('0xffffff') },
+        uSize: { value: 1.8 },
+        uHeight: { value: 1.0 },
+      },
     })
+
+    const particles_folder = gui.addFolder('Particles')
+    // particles_folder.close()
+    particles_folder.add(particlesMaterial.uniforms.uSize, 'value').min(0).max(20).step(0.001).name('uSize')
+    particles_folder.add(particlesMaterial.uniforms.uHeight, 'value').min(0.5).max(1).step(0.001).name('uHeight')
 
     const particles = new THREE.Points(particlesGeometry, particlesMaterial)
     scene.add(particles)
@@ -282,6 +296,16 @@
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime()
+
+      // const alphas = particlesGeometry.attributes.alpha
+      // for (let i = 0; i < alphas.count; i++) {
+      //   alphas.array[i] *= 0.5
+      //   if (alphas.array[i] < 0.01) {
+      //     alphas.array[i] = 1.0
+      //   }
+      // }
+
+      // alphas.needsUpdate = true
 
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       orbitControls.update()
