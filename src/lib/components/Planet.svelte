@@ -299,27 +299,10 @@
         depthWrite: false,
       })
     )
-
-    const orbitLogoConfig = {
-      height: 2.2,
-      phi: Math.PI / 2,
-      theta: 0,
-      speedCoefficient: 0.2,
-    }
-
+    0
+    logo.position.set(0, 0, 2.2)
     logo.scale.set(0.128, 0.1, 1)
     scene.add(logo)
-
-    const logoFolder = gui.addFolder('Logo')
-
-    logoFolder
-      .add(orbitLogoConfig, 'height')
-      .min(distance)
-      .max(distance * 3)
-      .step(0.01)
-
-    // logoFolder.add(orbitLogoConfig, 'phi').min(0).max(Math.PI).step(0.01)
-    // logoFolder.add(orbitLogoConfig, 'theta').min(0).max(Math.PI).step(0.01)
 
     /**
      * Raycaster
@@ -327,65 +310,14 @@
     const raycaster = new THREE.Raycaster()
 
     /**
-     * Particles
-     */
-
-    // // const particlesGeometry = new THREE.SphereGeometry(1, 32, 32)
-    // const count = 20000
-    // const starsGeometry = new THREE.BufferGeometry()
-    // const starsPositions = new Float32Array(count * 3).map(() => (Math.random() - 0.5) * 20)
-    // // const colors = new Float32Array(count * 3).map(() => Math.random())
-    // starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3))
-    // // starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-
-    // // Material
-
-    // const starsMaterial = new THREE.PointsMaterial({
-    //   size: 0.01,
-    //   sizeAttenuation: true,
-    //   // transparent: true,
-    //   // depthWrite: false,
-    //   // blending: THREE.AdditiveBlending,
-    //   // vertexColors: true,
-    // })
-
-    // // Points
-    // const stars = new THREE.Points(starsGeometry, starsMaterial)
-    // scene.add(stars)
-
-    /**
      * Animate
      */
 
-    logo.position.set(0, 0, 2.2)
-    const dir = new THREE.Vector3(0, 0, 0.01)
+    const quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0.1, -0.05, 0), 0.1)
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime()
-      // logo.position.add(dir.clone().multiplyScalar(2.2))
-      // Object.assign(logo.position, logo.position.clone().add(dir).normalize().multiplyScalar(2.2))
-
-      // orbitLogoConfig.phi = (orbitLogoConfig.phi + orbitLogoConfig.speedCoefficient / 5) % 90
-      // orbitLogoConfig.theta = (orbitLogoConfig.theta + orbitLogoConfig.speedCoefficient) % 89
-      // logo.position.x =
-      //   orbitLogoConfig.height *
-      //   Math.sin(orbitLogoConfig.phi) *
-      //   Math.cos(orbitLogoConfig.theta * orbitLogoConfig.speedCoefficient)
-      // logo.position.y =
-      //   orbitLogoConfig.height *
-      //   Math.sin(orbitLogoConfig.phi) *
-      //   Math.sin(orbitLogoConfig.theta * orbitLogoConfig.speedCoefficient)
-      // logo.position.z = orbitLogoConfig.height * Math.cos(orbitLogoConfig.phi)
-
-      // const alphas = particlesGeometry.attributes.alpha
-      // for (let i = 0; i < alphas.count; i++) {
-      //   alphas.array[i] *= 0.5
-      //   if (alphas.array[i] < 0.01) {
-      //     alphas.array[i] = 1.0
-      //   }
-      // }
-
-      // alphas.needsUpdate = true
+      logo.position.applyQuaternion(quaternion)
 
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       orbitControls.update()
