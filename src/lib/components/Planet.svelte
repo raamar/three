@@ -13,6 +13,7 @@
   import { points as data } from '$lib/data/points'
   import logoTextureUrl from '$lib/assets/textures/logo.png?url'
   import pointTextureUrl from '$lib/assets/textures/particles/1.png?url'
+  import rayTextureUrl from '$lib/assets/textures/rays/lightray.jpg?url'
 
   const cursor = new THREE.Vector2()
 
@@ -40,8 +41,6 @@
     gsap.to(camera.position, { z: 9, duration: 3.5 }).eventCallback('onComplete', () => {
       // orbitControls.minDistance = 5
     })
-
-    const clock = new THREE.Clock()
     const orbitControls = new OrbitControls(camera, node)
 
     orbitControls.enablePan = false
@@ -60,7 +59,8 @@
 
     const textureLoader = new THREE.TextureLoader()
     const logoTexture = textureLoader.load(logoTextureUrl)
-    const pointTexture = textureLoader.load(pointTextureUrl)
+    // const pointTexture = textureLoader.load(pointTextureUrl)
+    const rayTexture = textureLoader.load(rayTextureUrl)
 
     /**
      * Objects
@@ -70,6 +70,9 @@
 
     const startRotation = { x: Math.PI * 0.62, y: Math.PI * -0.25, z: Math.PI * 0.2 }
     const ratitionAnimationObject = { x: Math.PI * 0.2, y: Math.PI * -0.4, z: Math.PI * 0.1, duration: 4.5 }
+
+    // const startRotation = { x: 0, y: 0, z: 0 }
+    // const ratitionAnimationObject = { x: 0, y: 0, z: 0 }
     const earthGeometry = new THREE.SphereGeometry(2, 64, 64)
     const earthMaterial = new THREE.ShaderMaterial({
       vertexShader: earthVertexShader,
@@ -230,7 +233,9 @@
 
     scene.add(atmosphereMesh)
 
-    // Point
+    /**
+     * Dots Texture
+     */
 
     const getVec3Point = (lat: number, lon: number) => {
       const phi = ((90 - lat) * Math.PI) / 180
@@ -272,16 +277,13 @@
       uniforms: {
         uColor: { value: new THREE.Color('#ffffff') },
         uSize: { value: 1.5 },
-        uHeight: { value: 1.0 },
-        uTexture: {
-          value: pointTexture,
-        },
+        uHeight: { value: 0.999 },
         alphaTest: { value: 0.9 },
       },
     })
 
     const particles_folder = gui.addFolder('Particles')
-    // particles_folder.close()
+    particles_folder.close()
     particles_folder.add(particlesMaterial.uniforms.uSize, 'value').min(0).max(20).step(0.001).name('uSize')
     particles_folder.add(particlesMaterial.uniforms.uHeight, 'value').min(0.5).max(1).step(0.001).name('uHeight')
 
@@ -291,7 +293,118 @@
     particles.rotation.set(startRotation.x, startRotation.y, startRotation.z)
     gsap.to(particles.rotation, ratitionAnimationObject)
 
-    // Logo
+    // Projects
+    // const projectsGeometry = new THREE.BufferGeometry()
+    // const projectsPositions = new Float32Array([...getVec3Point(44.500237, 34.171698)])
+
+    // projectsGeometry.setAttribute(
+    //   'alpha',
+    //   new THREE.BufferAttribute(new Float32Array({ length: projectsPositions.length / 3 }).fill(1), 1)
+    // )
+
+    // projectsGeometry.setAttribute('position', new THREE.BufferAttribute(projectsPositions, 3))
+
+    // const projects = new THREE.Points(
+    //   projectsGeometry,
+    //   new THREE.ShaderMaterial({
+    //     transparent: true,
+    //     vertexShader: particleVertexShader,
+    //     fragmentShader: particleFragmentShader,
+    //     uniforms: {
+    //       uColor: { value: new THREE.Color('#ff0000') },
+    //       uSize: { value: 5 },
+    //       uHeight: { value: 0.999 },
+    //       alphaTest: { value: 0.9 },
+    //     },
+    //   })
+    // )
+    // scene.add(projects)
+
+    // projects.rotation.set(startRotation.x, startRotation.y, startRotation.z)
+    // gsap.to(projects.rotation, ratitionAnimationObject)
+
+    const projectsPoints = [
+      [44.500237, 34.171698],
+      [59.938367, 30.298518],
+      [20.452013, 0.888921],
+      [17.966516, 47.252022],
+      [40.599914, 16.578645],
+      [38.078267, 22.811702],
+      [42.176262, 3.090772],
+      [49.899965, 14.844719],
+      [-6.814316, -39.744845],
+      [-8.814316, -35.744845],
+      [61.33452, -43.989966],
+      [30.538418, 3.070963],
+      [36.14164, 9.497045],
+      [-3.866223, 25.688004],
+      [29.849821, 26.865197],
+      [36.918434, -58.141933],
+    ]
+
+    rayTexture.wrapT = THREE.ClampToEdgeWrapping
+    const light_material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.9,
+
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      map: rayTexture,
+      depthWrite: false,
+    })
+
+    const rotationFix = { lat: -10, lon: -88 }
+    const h = 0.4
+
+    const rayBaseGeometry = new THREE.CircleGeometry(0.04, 16, 16)
+    const rayBaseMaterial = new THREE.MeshBasicMaterial({
+      color: 'white',
+      side: THREE.DoubleSide,
+      transparent: true,
+    })
+
+    projectsPoints.forEach(([lat, lon]) => {
+      const rayBase = new THREE.Mesh(rayBaseGeometry, rayBaseMaterial)
+      const rayGeometry = new THREE.PlaneGeometry(0.05, h, 2)
+      const rayPlane = new THREE.Mesh(rayGeometry, light_material)
+      var positionAttribute = rayGeometry.getAttribute('position')
+      var vertex = new THREE.Vector3()
+
+      for (var i = 0; i < positionAttribute.count; i++) {
+        vertex.fromBufferAttribute(positionAttribute, i)
+        vertex.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
+        vertex.add(new THREE.Vector3(0, 0, -h / 2))
+        positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z)
+      }
+
+      positionAttribute.needsUpdate = true
+
+      const rayPlane2 = rayPlane.clone()
+      rayPlane.add(rayPlane2)
+      rayPlane2.rotation.z = Math.PI / 2
+      rayPlane2.updateMatrix()
+
+      rayPlane.position.copy(new THREE.Vector3(...getVec3Point(lat + rotationFix.lat, lon + rotationFix.lon)))
+      rayPlane.lookAt(new THREE.Vector3())
+
+      rayBase.position.copy(rayPlane.position)
+      rayBase.lookAt(new THREE.Vector3())
+
+      const startZ = rayPlane.position.z
+      rayPlane.material.opacity = 0
+      rayPlane.position.z = 0
+      rayBase.material.opacity = 0
+      gsap.to(rayPlane.material, { opacity: 0.5, duration: 6 * Math.random() + 1.5, delay: 4.5 })
+      gsap.to(rayBase.material, { opacity: 1, duration: 1, delay: 4.5 })
+      gsap.to(rayPlane.position, { z: startZ, duration: 2, delay: 3.5, ease: 'circ.in' })
+
+      scene.add(rayBase)
+      scene.add(rayPlane)
+    })
+
+    /**
+     * Logo
+     */
 
     const logo = new THREE.Sprite(
       new THREE.SpriteMaterial({
@@ -313,10 +426,15 @@
      * Animate
      */
 
-    const quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0.1, -0.05, 0), 0.1)
+    const quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0.1, -0.05, 0), 0.05)
+    const clock = new THREE.Clock()
+    let prevTime = clock.getElapsedTime()
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime()
+      const tick = elapsedTime - prevTime
+      prevTime = elapsedTime
+
       logo.position.applyQuaternion(quaternion)
 
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
