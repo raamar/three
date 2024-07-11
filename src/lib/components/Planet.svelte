@@ -389,14 +389,13 @@
 
       rayBase.position.copy(rayPlane.position)
       rayBase.lookAt(new THREE.Vector3())
-
       const startZ = rayPlane.position.z
       rayPlane.material.opacity = 0
       rayPlane.position.z = 0
       rayBase.material.opacity = 0
-      gsap.to(rayPlane.material, { opacity: 0.5, duration: 6 * Math.random() + 1.5, delay: 4.5 })
-      gsap.to(rayBase.material, { opacity: 1, duration: 1, delay: 4.5 })
-      gsap.to(rayPlane.position, { z: startZ, duration: 2, delay: 3.5, ease: 'circ.in' })
+      gsap.to(rayPlane.material, { opacity: 0.5, duration: 6 * Math.random() + 2.5, delay: 4.5 })
+      gsap.to(rayBase.material, { opacity: 1, duration: 2, delay: 4.5 })
+      gsap.to(rayPlane.position, { z: startZ, duration: 3, delay: 3.5, ease: 'sine' })
 
       scene.add(rayBase)
       scene.add(rayPlane)
