@@ -12,8 +12,8 @@
   import particleFragmentShader from '$lib/shaders/particle/fragment.glsl?raw'
   import { points as data } from '$lib/data/points'
   import logoTextureUrl from '$lib/assets/textures/logo.png?url'
-  import pointTextureUrl from '$lib/assets/textures/particles/1.png?url'
   import rayTextureUrl from '$lib/assets/textures/rays/lightray.jpg?url'
+  import { blur } from 'svelte/transition'
 
   const cursor = new THREE.Vector2()
 
@@ -34,18 +34,20 @@
   const appMount = (node: HTMLElement) => {
     const gui = new GUI()
 
+    gui.hide()
+
     const scene = new THREE.Scene()
 
     const camera = new THREE.PerspectiveCamera(30, $windowStore.innerWidth / $windowStore.innerHeight, 0.1, 10000)
     camera.position.set(0, 0, 3)
     gsap.to(camera.position, { z: 9, duration: 3.5 }).eventCallback('onComplete', () => {
-      // orbitControls.minDistance = 5
+      orbitControls.minDistance = 5
     })
     const orbitControls = new OrbitControls(camera, node)
 
     orbitControls.enablePan = false
     orbitControls.enableDamping = true
-    // orbitControls.maxDistance = 9
+    orbitControls.maxDistance = 9
 
     scene.add(camera)
 
@@ -295,34 +297,6 @@
     gsap.to(particles.rotation, ratitionAnimationObject)
 
     // Projects
-    // const projectsGeometry = new THREE.BufferGeometry()
-    // const projectsPositions = new Float32Array([...getVec3Point(44.500237, 34.171698)])
-
-    // projectsGeometry.setAttribute(
-    //   'alpha',
-    //   new THREE.BufferAttribute(new Float32Array({ length: projectsPositions.length / 3 }).fill(1), 1)
-    // )
-
-    // projectsGeometry.setAttribute('position', new THREE.BufferAttribute(projectsPositions, 3))
-
-    // const projects = new THREE.Points(
-    //   projectsGeometry,
-    //   new THREE.ShaderMaterial({
-    //     transparent: true,
-    //     vertexShader: particleVertexShader,
-    //     fragmentShader: particleFragmentShader,
-    //     uniforms: {
-    //       uColor: { value: new THREE.Color('#ff0000') },
-    //       uSize: { value: 5 },
-    //       uHeight: { value: 0.999 },
-    //       alphaTest: { value: 0.9 },
-    //     },
-    //   })
-    // )
-    // scene.add(projects)
-
-    // projects.rotation.set(startRotation.x, startRotation.y, startRotation.z)
-    // gsap.to(projects.rotation, ratitionAnimationObject)
 
     const projectsPoints = [
       [44.500237, 34.171698],
@@ -358,13 +332,13 @@
     const h = 0.4
 
     const rayBaseGeometry = new THREE.CircleGeometry(0.04, 16, 16)
-    const rayBaseMaterial = new THREE.MeshBasicMaterial({
-      color: 'white',
-      side: THREE.DoubleSide,
-      transparent: true,
-    })
 
     projectsPoints.forEach(([lat, lon]) => {
+      const rayBaseMaterial = new THREE.MeshBasicMaterial({
+        color: 'white',
+        side: THREE.DoubleSide,
+        transparent: true,
+      })
       const rayBase = new THREE.Mesh(rayBaseGeometry, rayBaseMaterial)
       const rayGeometry = new THREE.PlaneGeometry(0.05, h, 2)
       const rayPlane = new THREE.Mesh(rayGeometry, light_material)
@@ -394,9 +368,11 @@
       rayPlane.material.opacity = 0
       rayPlane.position.z = 0
       rayBase.material.opacity = 0
-      gsap.to(rayPlane.material, { opacity: 0.5, duration: 6 * Math.random() + 2.5, delay: 4.5 })
-      gsap.to(rayBase.material, { opacity: 1, duration: 2, delay: 4.5 })
-      gsap.to(rayPlane.position, { z: startZ, duration: 3, delay: 3.5, ease: 'sine' })
+
+      const delay = Math.random() * 2 + 4.5
+      gsap.to(rayPlane.material, { opacity: 0.5, duration: 2.5, delay: delay, ease: 'sine' })
+      gsap.to(rayBase.material, { opacity: 1, duration: 1, delay: delay, ease: 'sine' })
+      gsap.to(rayPlane.position, { z: startZ, duration: 3, delay: delay - 1, ease: 'sine' })
 
       scene.add(rayBase)
       scene.add(rayPlane)
@@ -453,13 +429,27 @@
     handleResize(window)
     renderer.setAnimationLoop(animate)
     node.appendChild(renderer.domElement)
+    mount = true
   }
+
+  let mount = false
 </script>
 
-<div class="scene" use:appMount on:mousemove={handleMouseMove} role="navigation" on:dblclick={handleDblClick}></div>
+<div class="container">
+  {#key mount}
+    <div
+      class="scene"
+      use:appMount
+      on:mousemove={handleMouseMove}
+      role="navigation"
+      on:dblclick={handleDblClick}
+      in:blur={{ duration: 2000, amount: 50 }}
+    ></div>
+  {/key}
+</div>
 
 <style>
-  .scene {
+  .container {
     background: rgb(24, 24, 24);
     background: linear-gradient(151deg, rgba(24, 24, 24, 1) 0%, rgb(27, 27, 27) 100%);
   }
