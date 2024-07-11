@@ -332,6 +332,14 @@
     const raysMap: Record<string, number> = {}
 
     const rayBaseGeometry = new THREE.CircleGeometry(0.015, 16, 16)
+    const rayClickAreaGeometry = new THREE.CircleGeometry(0.5, 16, 16)
+
+    const rayClickMaterial = new THREE.MeshBasicMaterial({
+      color: 'white',
+      transparent: true,
+      side: THREE.DoubleSide,
+      opacity: 0,
+    })
 
     const rayGroups = projectsPoints.map(([lat, lon], index) => {
       const rayGroup = new THREE.Group()
@@ -351,6 +359,7 @@
         transparent: true,
       })
       const rayBase = new THREE.Mesh(rayBaseGeometry, rayBaseMaterial)
+      const rayClickArea = new THREE.Mesh(rayClickAreaGeometry, rayClickMaterial)
       const height = (Math.random() * h) / 2 + h / 2
       const rayGeometry = new THREE.PlaneGeometry(0.02, height, 2)
       const rayPlane = new THREE.Mesh(rayGeometry, light_material)
@@ -375,7 +384,10 @@
       rayPlane.lookAt(new THREE.Vector3())
 
       rayBase.position.copy(rayPlane.position)
+      rayClickArea.position.copy(rayPlane.position)
+      rayClickArea.translateZ(-0.3)
       rayBase.lookAt(new THREE.Vector3())
+      rayClickArea.lookAt(new THREE.Vector3())
       const startPos = rayPlane.position.clone()
       rayPlane.material.opacity = 0
       rayPlane.translateZ(3)
@@ -393,9 +405,10 @@
         ease: 'sine',
       })
 
-      rayGroup.add(rayBase, rayPlane)
+      rayGroup.add(rayBase, rayPlane, rayClickArea)
 
       raysMap[rayBase.uuid] = index
+      raysMap[rayClickArea.uuid] = index
       raysMap[rayPlane.uuid] = index
       raysMap[rayPlane2.uuid] = index
 
@@ -440,7 +453,8 @@
       const tick = elapsedTime - prevTime
       prevTime = elapsedTime
 
-      raycaster.setFromCamera(cursor, camera)
+      // raycaster.setFromCamera(cursor, camera)
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera)
 
       const rayIntersects = raycaster.intersectObjects(rayGroups, true)
       const rayIntersectsMap: Record<number, boolean> = {}
@@ -451,7 +465,7 @@
         rayIntersects.map((item) => (rayIntersectsMap[raysMap[item.object.uuid]] = true))
         Object.keys(rayIntersectsMap).forEach((key) =>
           //@ts-expect-error
-          rayGroups[Number(key)].children.forEach((child) => child.material.color.set('red'))
+          rayGroups[Number(key)]?.children?.forEach((child) => child.material.color.set('#fe5b00'))
         )
       }
 
