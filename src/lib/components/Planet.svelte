@@ -263,15 +263,21 @@
         })
         .flat()
     )
-
     const alphas = new Float32Array(positions.length / 3)
 
     for (let i = 0; i < alphas.length; i++) {
       alphas[i] = 0.8
     }
 
+    const intersections = new Float32Array(positions.length / 3)
+
+    for (let i = 0; i < alphas.length; i++) {
+      intersections[i] = 0
+    }
+
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
     particlesGeometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1))
+    particlesGeometry.setAttribute('intersections', new THREE.BufferAttribute(intersections, 1))
 
     const particlesMaterial = new THREE.ShaderMaterial({
       transparent: true,
@@ -315,32 +321,38 @@
       [-3.866223, 25.688004],
       [29.849821, 26.865197],
       [36.918434, -58.141933],
+      [17.052948930924412, 18.331350638816033],
     ]
 
     rayTexture.wrapT = THREE.ClampToEdgeWrapping
-    const light_material = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0.9,
-
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      map: rayTexture,
-      depthWrite: false,
-    })
 
     const rotationFix = { lat: -10, lon: -88 }
-    const h = 0.4
+    const h = 0.8
 
-    const rayBaseGeometry = new THREE.CircleGeometry(0.04, 16, 16)
+    const raysMap: Record<string, number> = {}
 
-    projectsPoints.forEach(([lat, lon]) => {
+    const rayBaseGeometry = new THREE.CircleGeometry(0.015, 16, 16)
+
+    const rayGroups = projectsPoints.map(([lat, lon], index) => {
+      const rayGroup = new THREE.Group()
+
+      const light_material = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0.9,
+
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        map: rayTexture,
+        depthWrite: false,
+      })
       const rayBaseMaterial = new THREE.MeshBasicMaterial({
         color: 'white',
         side: THREE.DoubleSide,
         transparent: true,
       })
       const rayBase = new THREE.Mesh(rayBaseGeometry, rayBaseMaterial)
-      const rayGeometry = new THREE.PlaneGeometry(0.05, h, 2)
+      const height = (Math.random() * h) / 2 + h / 2
+      const rayGeometry = new THREE.PlaneGeometry(0.02, height, 2)
       const rayPlane = new THREE.Mesh(rayGeometry, light_material)
       var positionAttribute = rayGeometry.getAttribute('position')
       var vertex = new THREE.Vector3()
@@ -348,7 +360,7 @@
       for (var i = 0; i < positionAttribute.count; i++) {
         vertex.fromBufferAttribute(positionAttribute, i)
         vertex.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
-        vertex.add(new THREE.Vector3(0, 0, -h / 2))
+        vertex.add(new THREE.Vector3(0, 0, -height / 2))
         positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z)
       }
 
@@ -364,19 +376,33 @@
 
       rayBase.position.copy(rayPlane.position)
       rayBase.lookAt(new THREE.Vector3())
-      const startZ = rayPlane.position.z
+      const startPos = rayPlane.position.clone()
       rayPlane.material.opacity = 0
-      rayPlane.position.z = 0
+      rayPlane.translateZ(3)
       rayBase.material.opacity = 0
 
       const delay = Math.random() * 2 + 4.5
-      gsap.to(rayPlane.material, { opacity: 0.5, duration: 2.5, delay: delay, ease: 'sine' })
+      gsap.to(rayPlane.material, { opacity: 0.3, duration: 2.5, delay: delay, ease: 'sine' })
       gsap.to(rayBase.material, { opacity: 1, duration: 1, delay: delay, ease: 'sine' })
-      gsap.to(rayPlane.position, { z: startZ, duration: 3, delay: delay - 1, ease: 'sine' })
+      gsap.to(rayPlane.position, {
+        x: startPos.x,
+        y: startPos.y,
+        z: startPos.z,
+        duration: 3,
+        delay: delay - 1,
+        ease: 'sine',
+      })
 
-      scene.add(rayBase)
-      scene.add(rayPlane)
+      rayGroup.add(rayBase, rayPlane)
+
+      raysMap[rayBase.uuid] = index
+      raysMap[rayPlane.uuid] = index
+      raysMap[rayPlane2.uuid] = index
+
+      return rayGroup
     })
+
+    scene.add(...rayGroups)
 
     /**
      * Logo
@@ -398,6 +424,9 @@
      */
     const raycaster = new THREE.Raycaster()
 
+    raycaster.params.Points.threshold = 5
+    raycaster.params.Line.threshold = 5
+
     /**
      * Animate
      */
@@ -410,6 +439,39 @@
       const elapsedTime = clock.getElapsedTime()
       const tick = elapsedTime - prevTime
       prevTime = elapsedTime
+
+      raycaster.setFromCamera(cursor, camera)
+
+      const rayIntersects = raycaster.intersectObjects(rayGroups, true)
+      const rayIntersectsMap: Record<number, boolean> = {}
+
+      //@ts-expect-error
+      rayGroups.forEach((group) => group.children.forEach((child) => child.material.color.set('white')))
+      if (rayIntersects.length) {
+        rayIntersects.map((item) => (rayIntersectsMap[raysMap[item.object.uuid]] = true))
+        Object.keys(rayIntersectsMap).forEach((key) =>
+          //@ts-expect-error
+          rayGroups[Number(key)].children.forEach((child) => child.material.color.set('red'))
+        )
+      }
+
+      // const test = raycaster.intersectObject(particles)
+
+      // particles.geometry.attributes.intersections.array.forEach((_, index) => {
+      //   particles.geometry.attributes.intersections.array[index] = 0
+      // })
+
+      // if (test.length) {
+      //   test.forEach((item) => {
+      //     if (!item.index) {
+      //       return
+      //     }
+
+      //     particles.geometry.attributes.intersections.array[item.index] = 1
+      //   })
+      // }
+
+      // particles.geometry.attributes.intersections.needsUpdate = true
 
       logo.position.applyQuaternion(quaternion)
 
