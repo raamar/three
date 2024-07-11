@@ -51,6 +51,7 @@
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
+      alpha: true,
     })
 
     /**
@@ -456,3 +457,10 @@
 </script>
 
 <div class="scene" use:appMount on:mousemove={handleMouseMove} role="navigation" on:dblclick={handleDblClick}></div>
+
+<style>
+  .scene {
+    background: rgb(24, 24, 24);
+    background: linear-gradient(151deg, rgba(24, 24, 24, 1) 0%, rgb(27, 27, 27) 100%);
+  }
+</style>
